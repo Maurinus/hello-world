@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload - QuickDrop.ai</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>Upload Your File</h2>
+    <input type="file" id="fileInput" />
+    <button id="uploadBtn">Upload</button>
+    <p id="status"></p>
+    <canvas id="qrcode"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script>
+    document.getElementById("uploadBtn").addEventListener("click", uploadFile);
+
+    async function uploadFile() {
+      const fileInput = document.getElementById("fileInput");
+      const status = document.getElementById("status");
+      const qrCanvas = document.getElementById("qrcode");
+
+      if (!fileInput.files.length) {
+        status.textContent = "Please select a file to upload.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      status.textContent = "Uploading...";
+      console.log("Starting upload...");
+
+      try {
+        const res = await fetch("https://quickdrop.ai/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!res.ok) {
+          status.textContent = "Upload failed. Please try again.";
+          console.error("Upload failed:", await res.text());
+          return;
+        }
+
+        const data = await res.json();
+        console.log("Upload successful. URL:", data.url);
+        status.textContent = "Upload complete! Scan this QR code on your iPhone:";
+
+        QRCode.toCanvas(qrCanvas, data.url, function (error) {
+          if (error) {
+            console.error("QR code error:", error);
+            status.textContent = "Error generating QR code.";
+          }
+        });
+      } catch (err) {
+        console.error("Error during upload:", err);
+        status.textContent = "Something went wrong. Please try again.";
+      }
+    }
+  </script>
+</body>
+</html>
